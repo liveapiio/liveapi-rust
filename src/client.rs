@@ -6,7 +6,8 @@ use serde_json::json;
 
 use crate::types::{
     BusinessDays, CallingCode, Conversion, Country, Distance, Division, EmailCheck, HolidayList, IbanValidation, IpLocation,
-    PhoneValidation, PlateFormat, PlateValidation, Point, Rates, Timezone, TrNumberValidation, VatCheck,
+    PhoneValidation, PlateFormat, PlateValidation, Point, Rates, Timezone, TrNumberValidation, VatCheck, IdValidator, IdValidation,
+    PostalCodeCountries, PostalCodeLookup, ReverseGeocode, UserAgent, BarcodeValidation,
 };
 
 /// A non-2xx response, or a failure to reach LiveAPI.
@@ -207,6 +208,45 @@ impl Client {
             body["country"] = json!(country);
         }
         self.json("POST", "/v1/vat/validate", &[], Some(body))
+    }
+
+    /// Lists the national ID, tax and company number checks.
+    pub fn id_validators(&self) -> Result<Vec<IdValidator>, Error> {
+        #[derive(serde::Deserialize)]
+        struct List {
+            data: Vec<IdValidator>,
+        }
+        let list: List = self.json("GET", "/v1/validate", &[], None)?;
+        Ok(list.data)
+    }
+
+    /// Checks a national number offline, for example `("ES", "nif", "12345678Z")`.
+    pub fn validate_id(&self, country: &str, kind: &str, value: &str) -> Result<IdValidation, Error> {
+        self.json("POST", &format!("/v1/validate/{}/{}", encode(country), encode(kind)), &[], Some(json!({ "value": value })))
+    }
+
+    pub fn postal_code_countries(&self) -> Result<PostalCodeCountries, Error> {
+        self.json("GET", "/v1/postal-codes", &[], None)
+    }
+
+    pub fn postal_code(&self, country: &str, code: &str) -> Result<PostalCodeLookup, Error> {
+        self.json("GET", &format!("/v1/postal-codes/{}/{}", encode(country), encode(code)), &[], None)
+    }
+
+    /// Country and administrative area for a point.
+    pub fn reverse_geocode(&self, latitude: f64, longitude: f64) -> Result<ReverseGeocode, Error> {
+        let (lat, lon) = (latitude.to_string(), longitude.to_string());
+        self.json("GET", "/v1/reverse", &[("lat", lat.as_str()), ("lon", lon.as_str())], None)
+    }
+
+    /// Parses a User-Agent string, for example one your server received.
+    pub fn parse_user_agent(&self, ua: &str) -> Result<UserAgent, Error> {
+        self.json("POST", "/v1/user-agent", &[], Some(json!({ "ua": ua })))
+    }
+
+    /// Checks an EAN-8, UPC-A, EAN-13, GTIN-14 or ISBN check digit.
+    pub fn validate_barcode(&self, code: &str) -> Result<BarcodeValidation, Error> {
+        self.json("GET", "/v1/barcodes/validate", &[("code", code)], None)
     }
 
     fn json<T: DeserializeOwned>(&self, method: &str, path: &str, query: &[(&str, &str)], body: Option<serde_json::Value>) -> Result<T, Error> {
