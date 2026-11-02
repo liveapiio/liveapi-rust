@@ -36,6 +36,17 @@ pub struct Country {
     pub languages: Vec<Language>,
     pub calling_code: Option<String>,
     pub in_eu: bool,
+    #[serde(default)]
+    pub geoshape: Option<serde_json::Value>,
+    #[serde(default)]
+    pub geoshape_attribution: Option<GeoShapeAttribution>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GeoShapeAttribution {
+    pub source: Option<String>,
+    pub url: Option<String>,
+    pub license: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -349,6 +360,7 @@ pub struct IdValidation {
 }
 
 #[derive(Debug, Deserialize)]
+// Kept under its original public type name for source compatibility.
 pub struct GeoNamesAttribution {
     pub source: String,
     pub url: String,
@@ -485,6 +497,8 @@ mod tests {
 
     #[test]
     fn decodes_new_endpoint_bodies() {
+        let country: super::Country = serde_json::from_str(r#"{"code":"TR","iso3":"TUR","numeric":"792","name":"Turkey","official_name":"Republic of Türkiye","name_tr":"Türkiye","capital":"Ankara","region":"Asia","subregion":"Western Asia","tld":".tr","flag":"🇹🇷","latitude":39.0,"longitude":35.0,"area_km2":783562.0,"independent":true,"currencies":[],"languages":[],"calling_code":"+90","in_eu":false,"geoshape":{"type":"Polygon","coordinates":[]},"geoshape_attribution":{"source":"Test","url":null,"license":"Test"}}"#).unwrap();
+        assert_eq!(country.geoshape.unwrap()["type"], "Polygon");
         let id: super::IdValidation = serde_json::from_str(r#"{"valid":true,"normalized":"12345678Z","country":"ES","type":"nif","reason":null,"registry_checked":false}"#).unwrap();
         assert_eq!(id.kind, "nif");
         let bc: super::BarcodeValidation = serde_json::from_str(r#"{"input":"4006381333931","normalized":"4006381333931","valid":true,"type":"ean13","reason":null,"check_digit":"1","expected_check_digit":"1","gtin14":"04006381333931","isbn10":null,"isbn13":null}"#).unwrap();
@@ -493,7 +507,7 @@ mod tests {
         assert_eq!(ua.device.kind, "desktop");
         let rev: super::ReverseGeocode = serde_json::from_str(r#"{"latitude":41.01,"longitude":28.97,"country_code":"TR","country_name":"Turkey","admin1":{"code":"34","name":"Istanbul","type":"province"},"admin2":null,"precision":"admin1","attribution":"geoBoundaries"}"#).unwrap();
         assert_eq!(rev.admin1.unwrap().name, "Istanbul");
-        let pc: super::PostalCodeLookup = serde_json::from_str(r#"{"country":"DE","query":"10115","postal_code":"10115","match":"exact","partial_data":false,"coverage_note":null,"places":[{"postal_code":"10115","place":"Berlin","admin1":null,"admin1_code":null,"admin2":null,"admin2_code":null,"admin3":null,"admin3_code":null,"latitude":52.5,"longitude":13.4,"accuracy":4}],"updated":"2026-10-01","attribution":{"source":"GeoNames","url":"https://www.geonames.org","license":"CC BY 4.0"}}"#).unwrap();
+        let pc: super::PostalCodeLookup = serde_json::from_str(r#"{"country":"DE","query":"10115","postal_code":"10115","match":"exact","partial_data":false,"coverage_note":null,"places":[{"postal_code":"10115","place":"Berlin","admin1":null,"admin1_code":null,"admin2":null,"admin2_code":null,"admin3":null,"admin3_code":null,"latitude":52.5,"longitude":13.4,"accuracy":4}],"updated":"2026-10-01","attribution":{"source":"LiveAPI","url":"https://liveapi.io/","license":"Proprietary"}}"#).unwrap();
         assert_eq!(pc.places[0].place, "Berlin");
     }
 }

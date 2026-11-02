@@ -77,6 +77,10 @@ impl Client {
         self.json("GET", &format!("/v1/countries/{}", encode(code)), &[], None)
     }
 
+    pub fn country_with_geoshape(&self, code: &str) -> Result<Country, Error> {
+        self.json("GET", &format!("/v1/countries/{}", encode(code)), &[("include", "geoshape")], None)
+    }
+
     pub fn divisions(&self, country: &str) -> Result<Vec<Division>, Error> {
         self.json("GET", &format!("/v1/countries/{}/divisions", encode(country)), &[], None)
     }

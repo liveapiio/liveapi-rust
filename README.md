@@ -9,6 +9,8 @@ let client = liveapi::Client::new(std::env::var("LIVEAPI_TOKEN").unwrap());
 let phone = client.validate_phone("0555 111 22 33", Some("TR"))?;
 ```
 
+Use `client.country_with_geoshape("TR")` to request the optional GeoJSON country boundary and attribution.
+
 ```toml
 liveapi = { git = "https://github.com/liveapiio/liveapi-rust" }
 ```
@@ -25,4 +27,4 @@ let ua = client.parse_user_agent("Mozilla/5.0 ...")?;
 
 Docs: https://liveapi.io/docs
 
-IP lookups include `attribution` and `attribution_url`. Keep those fields when you store or show a DB-IP result. Postal-code results carry a GeoNames `attribution` (CC BY 4.0); keep it too. A validation result with `valid: false` is still HTTP 200 and uses one call. Only a non-2xx response is free.
+IP lookups include `attribution` and `attribution_url`. Keep those fields when you store or show a DB-IP result. Postal-code results identify LiveAPI's in-house dataset. A validation result with `valid: false` is still HTTP 200 and uses one call. Only a non-2xx response is free.
